@@ -63,8 +63,14 @@ raw_data_manager = ContentManager()
 
 def get_text_content(msg, errors='replace'):
     content = msg.get_payload(decode=True)
-    charset = msg.get_param('charset', 'ASCII')
-    return content.decode(charset, errors=errors)
+    declared_charset = msg.get_param('charset', 'ASCII')
+    charset = email.charset.Charset(declared_charset)
+    try:
+        return content.decode(charset.input_charset, errors=errors)
+    except LookupError as err:
+        msg.policy.handle_defect(msg, err)
+        return content.decode('ascii', errors=errors)
+
 raw_data_manager.add_get_handler('text', get_text_content)
 
 
